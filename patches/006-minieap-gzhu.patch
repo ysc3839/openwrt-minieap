@@ -1,0 +1,124 @@
+From 4a309eaf82906a7fdbb5bc3f0cc5b13310a8e3df Mon Sep 17 00:00:00 2001
+From: Richard Yu <yurichard3839@gmail.com>
+Date: Fri, 1 Dec 2017 01:10:28 +0800
+Subject: [PATCH 1/2] packet_plugin_rjv3: Update params for GZHU.
+
+---
+ packet_plugin/rjv3/packet_plugin_rjv3.h      | 2 +-
+ packet_plugin/rjv3/packet_plugin_rjv3_priv.c | 4 ++--
+ packet_plugin/rjv3/rjv3_hashes/checkV4.c     | 8 ++++----
+ 3 files changed, 7 insertions(+), 7 deletions(-)
+
+diff --git a/packet_plugin/rjv3/packet_plugin_rjv3.h b/packet_plugin/rjv3/packet_plugin_rjv3.h
+index a22c1dd..75f9483 100644
+--- a/packet_plugin/rjv3/packet_plugin_rjv3.h
++++ b/packet_plugin/rjv3/packet_plugin_rjv3.h
+@@ -8,7 +8,7 @@
+ #define DEFAULT_HEARTBEAT_INTERVAL  60
+ #define DEFAULT_MAX_DHCP_COUNT      3
+ #define DEFAULT_SERVICE_NAME        "internet"
+-#define DEFAULT_VER_STR             "RG-SU For Linux V1.0"
++#define DEFAULT_VER_STR             "RG-SU For Linux V1.30"
+ #define DEFAULT_DHCP_SCRIPT         ""
+ #define DEFAULT_EAP_BCAST_ADDR      BROADCAST_STANDARD
+ #define DEFAULT_DHCP_TYPE           DHCP_AFTER_AUTH
+diff --git a/packet_plugin/rjv3/packet_plugin_rjv3_priv.c b/packet_plugin/rjv3/packet_plugin_rjv3_priv.c
+index c8fe46c..c66abab 100644
+--- a/packet_plugin/rjv3/packet_plugin_rjv3_priv.c
++++ b/packet_plugin/rjv3/packet_plugin_rjv3_priv.c
+@@ -97,7 +97,7 @@ static void rjv3_set_v3_hash(uint8_t* hash_buf, ETH_EAP_FRAME* request) {
+         _v3_buf = computeV4(request->content + sizeof(FRAME_HEADER) + 1, /* position of MD5-Value */
+                             *(request->content + sizeof(FRAME_HEADER))); /* position of MD5-Value-Size */
+     } else {
+-        uint8_t _v3_pad[RJV3_PAD_SIZE] = {0};
++        uint8_t _v3_pad[RJV3_PAD_SIZE] = {0x21, 0x6A, 0x69, 0x65, 0x72, 0x75, 0x69, 0x39, 0x30, 0x30, 0x32, 0x70, 0x6D, 0x73, 0x75, 0x73};
+         _v3_buf = computeV4(_v3_pad, RJV3_PAD_SIZE);
+     }
+     memmove(hash_buf, _v3_buf, 0x80);
+@@ -278,7 +278,7 @@ static int rjv3_append_common_fields(PACKET_PLUGIN* this, LIST_ELEMENT** list, i
+     uint8_t _local_mac[RJV3_SIZE_MAC];
+     uint8_t _pwd_hash[RJV3_SIZE_PWD_HASH] = {0};
+     char _sec_dns[INET6_ADDRSTRLEN] = {0};
+-    uint8_t _misc_2[RJV3_SIZE_MISC_2] = {0x01};
++    uint8_t _misc_2[RJV3_SIZE_MISC_2] = {0x00};
+     uint8_t _ll_ipv6[RJV3_SIZE_LL_IPV6] = {0};
+     uint8_t _ll_ipv6_tmp[RJV3_SIZE_LL_IPV6_T] = {0};
+     uint8_t _glb_ipv6[RJV3_SIZE_GLB_IPV6] = {0};
+diff --git a/packet_plugin/rjv3/rjv3_hashes/checkV4.c b/packet_plugin/rjv3/rjv3_hashes/checkV4.c
+index 56f89d3..f4ce124 100644
+--- a/packet_plugin/rjv3/rjv3_hashes/checkV4.c
++++ b/packet_plugin/rjv3/rjv3_hashes/checkV4.c
+@@ -10,8 +10,8 @@
+ 
+ const unsigned char array[1820] =
+ {
+-    0x20, 0x12, 0x05, 0x03,
+-    0x21, 0x57, 0x00, 0x00,
++    0x20, 0x12, 0x10, 0x26,
++    0x13, 0x44, 0x01, 0x20,
+     0xd4, 0xf6, 0x7c, 0x00,
+     0xf8, 0xfa, 0x7c, 0x99,
+     0x0c, 0x82, 0x4c, 0x00,
+@@ -469,8 +469,8 @@ const unsigned char array[1820] =
+ 
+ const unsigned char array_1[2035] =
+ {
+-    0x20, 0x12, 0x05, 0x03,
+-    0x21, 0x57, 0x74, 0x2e,
++    0x20, 0x12, 0x10, 0x26,
++    0x13, 0x44, 0x01, 0x20,
+     0x63, 0x70, 0x70, 0x20,
+     0x3a, 0x20, 0x44, 0x65,
+     0x66, 0x69, 0x6e, 0x65,
+-- 
+2.21.0
+
+
+From 0a58f18e19d85ef23272ec38b5f4fc86d3a0d6d7 Mon Sep 17 00:00:00 2001
+From: Richard Yu <yurichard3839@gmail.com>
+Date: Thu, 8 Feb 2018 02:32:01 +0800
+Subject: [PATCH 2/2] packet_plugin_rjv3: Remove unnecessary params for GZHU.
+
+---
+ packet_plugin/rjv3/packet_plugin_rjv3.c      | 4 ++--
+ packet_plugin/rjv3/packet_plugin_rjv3_priv.c | 4 ++--
+ 2 files changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/packet_plugin/rjv3/packet_plugin_rjv3.c b/packet_plugin/rjv3/packet_plugin_rjv3.c
+index 0465990..9063528 100644
+--- a/packet_plugin/rjv3/packet_plugin_rjv3.c
++++ b/packet_plugin/rjv3/packet_plugin_rjv3.c
+@@ -254,8 +254,8 @@ static RESULT rjv3_process_success(struct _packet_plugin* this, ETH_EAP_FRAME* f
+         return FAILURE;
+     }
+ 
+-    PR_INFO("正定时发送 Keep-Alive 报文以保持在线……");
+-    schedule_alarm(1, rjv3_send_keepalive_timed, this);
++    //PR_INFO("正定时发送 Keep-Alive 报文以保持在线……");
++    //schedule_alarm(1, rjv3_send_keepalive_timed, this);
+     return SUCCESS;
+ }
+ 
+diff --git a/packet_plugin/rjv3/packet_plugin_rjv3_priv.c b/packet_plugin/rjv3/packet_plugin_rjv3_priv.c
+index c66abab..4e953c3 100644
+--- a/packet_plugin/rjv3/packet_plugin_rjv3_priv.c
++++ b/packet_plugin/rjv3/packet_plugin_rjv3_priv.c
+@@ -298,13 +298,13 @@ static int rjv3_append_common_fields(PACKET_PLUGIN* this, LIST_ELEMENT** list, i
+ 
+     rjv3_set_secondary_dns(_sec_dns, PRIV->fake_dns2);
+ 
+-    rjv3_set_ipv6_addr(_ll_ipv6, _ll_ipv6_tmp, _glb_ipv6);
++    //rjv3_set_ipv6_addr(_ll_ipv6, _ll_ipv6_tmp, _glb_ipv6);
+ 
+     rjv3_set_v3_hash(_v3_hash, PRIV->last_recv_packet);
+ 
+     rjv3_set_service_name(_service, PRIV->service_name);
+ 
+-    rjv3_set_hdd_serial(_hdd_ser, PRIV->fake_serial);
++    //rjv3_set_hdd_serial(_hdd_ser, PRIV->fake_serial);
+ 
+ #define CHK_ADD(x) \
+     _this_len = x; \
+-- 
+2.21.0
+
