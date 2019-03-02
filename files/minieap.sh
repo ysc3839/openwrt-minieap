@@ -5,6 +5,16 @@
 . ../netifd-proto.sh
 init_proto "$@"
 
+append_setting() {
+	local s="$1"
+	[ -n "$s" ] && \
+		echo "$s" >>"$config_file"
+}
+
+append_setting_list() {
+	[ -n "$1" ] && append_setting "$3=$1"
+}
+
 proto_minieap_init_config() {
 	lasterror=1
 
@@ -39,14 +49,6 @@ proto_minieap_init_config() {
 	proto_config_add_int max_dhcp_count
 }
 
-proto_minieap_add_module() {
-	[ -n "$1" ] && append "$3" "--module $1"
-}
-
-proto_minieap_add_rj_option() {
-	[ -n "$1" ] && append "$3" "--rj-option $1"
-}
-
 proto_minieap_setup() {
 	local config="$1"
 	local iface="$2"
@@ -61,41 +63,45 @@ proto_minieap_setup() {
 		return
 	}
 
-	local modules
-	json_for_each_item proto_minieap_add_module module modules
+	config_dir='/var/etc/minieap'
+	config_file="${config_dir}/${config}.conf"
 
-	local rj_options
-	json_for_each_item proto_minieap_add_rj_option rj_option rj_options
+	[ -d $config_dir ] || {
+		mkdir -p $config_dir
+		chmod 0755 $config_dir
+	}
+	>$config_file
 
-	[ "$no_auto_reauth" = 0 ] && no_auto_reauth=""
+	append_setting "username=$username"
+	append_setting "password=$password"
+	append_setting "nic=$iface"
+	json_for_each_item append_setting_list module module
+	append_setting "daemonize=0"
+	append_setting "if-impl=sockraw"
+	append_setting ${max_fail:+max-fail=$max_fail}
+	append_setting ${max_retries:+max-retries=$max_retries}
+	append_setting ${no_auto_reauth:+no-auto-reauth=$no_auto_reauth}
+	append_setting ${wait_after_fail:+wait-after-fail=$wait_after_fail}
+	append_setting ${stage_timeout:+stage-timeout=$stage_timeout}
+	append_setting ${auth_round:+auth-round=$auth_round}
+	append_setting "pid-file=none"
+	append_setting ${log_file:+log-file="$log_file"}
+
+	append_setting ${heartbeat:+heartbeat=$heartbeat}
+	append_setting ${eap_bcast_addr:+eap-bcast-addr=$eap_bcast_addr}
+	append_setting ${dhcp_type:+dhcp-type=$dhcp_type}
+	json_for_each_item append_setting_list rj_option 'rj-option'
+	append_setting ${service:+service="$service"}
+	append_setting ${version_str:+version-str="$version_str"}
+	append_setting ${fake_dns1:+fake-dns1=$fake_dns1}
+	append_setting ${fake_dns2:+fake-dns2=$fake_dns2}
+	append_setting ${fake_serial:+fake-serial="$fake_serial"}
+	append_setting ${max_dhcp_count:+max-dhcp-count=$max_dhcp_count}
 
 	network_is_up wan || (echo "wan is not ready, sleep 10s." >&2; sleep 10)
 
 	proto_export "INTERFACE=$config"
-	proto_run_command "$config" minieap \
-		-u "$username" \
-		-p "$password" \
-		-n "$iface" \
-		-b 0 \
-		--script /lib/netifd/minieap.script \
-		--pid-file none \
-		${max_fail:+-l $max_fail} \
-		${max_retries:+--max-retries $max_retries} \
-		${no_auto_reauth:+--no-auto-reauth } \
-		${wait_after_fail:+-r $wait_after_fail} \
-		${stage_timeout:+-t $stage_timeout} \
-		${auth_round:+-j $auth_round} \
-		${log_file:+--log-file "$log_file"} \
-		${heartbeat:+-e $heartbeat} \
-		${eap_bcast_addr:+-a $eap_bcast_addr} \
-		${dhcp_type:+-d $dhcp_type} \
-		${service:+--service "$service"} \
-		${version_str:+--version-str "$version_str"} \
-		${fake_dns1:+--fake-dns1 $fake_dns1} \
-		${fake_dns2:+--fake-dns2 $fake_dns2} \
-		${fake_serial:+--fake-serial "$fake_serial"} \
-		${max_dhcp_count:+--max-dhcp-count $max_dhcp_count} \
-		$modules $rj_options
+	proto_run_command "$config" minieap --conf-file "$config_file"
 }
 
 proto_minieap_teardown() {
@@ -104,9 +110,9 @@ proto_minieap_teardown() {
 	[ ${ERROR:-0} -ne 0 ] && {
 		echo "minieap: Program exited with code $ERROR." >&2
 		proto_notify_error "$interface" "EXIT_FAILURE"
+		proto_block_restart "$interface"
 	}
 
-	proto_block_restart "$interface"
 	proto_kill_command "$interface"
 }
 
