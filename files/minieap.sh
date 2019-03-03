@@ -86,6 +86,7 @@ proto_minieap_setup() {
 	append_setting ${auth_round:+auth-round=$auth_round}
 	append_setting "pid-file=none"
 	append_setting ${log_file:+log-file="$log_file"}
+	append_setting "script=/lib/netifd/minieap.script"
 
 	append_setting ${heartbeat:+heartbeat=$heartbeat}
 	append_setting ${eap_bcast_addr:+eap-bcast-addr=$eap_bcast_addr}
